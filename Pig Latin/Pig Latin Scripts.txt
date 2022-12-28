@@ -1,0 +1,702 @@
+﻿1. Find the number of accidents in each state where the accident side is “R”, and the Amenity is labeled as “FALSE”. Group By the Weather_Condition.
+
+
+-- Load the dataset from a CSV file. (with skipping the input header)
+US_accidents = LOAD '/user/maria_dev/Capstone/US_accidents_Pig.csv' USING  
+org.apache.pig.piggybank.storage.CSVExcelStorage(',' ,'NO_MULTILINE','UNIX','SKIP_INPUT_HEADER') 
+AS(ID:int,Severity:int,Month:int,Year:int,Distance:float,Side:chararray,City:chararray,County:chararray,State:chararray,
+Temperature:float,Wind_Chill:float,Humidity:float,Pressure:float,Visibility:float,Wind_Direction:chararray,Wind_Speed:float,
+Precipitation:float,Weather_Condition:chararray,Amenity:chararray,Bump:chararray,Crossing:chararray,Give_Way:chararray,
+Junction:chararray,No_Exit:chararray,Railway:chararray,Roundabout:chararray,Station:chararray,Stop:chararray,
+Traffic_Calming:chararray,Traffic_Signal:chararray,Turning_Loop:chararray,Sunrise_Sunset:chararray,
+Civil_Twilight:chararray,Nautical_Twilight:chararray,Astronomical_Twilight:chararray);
+
+
+-- Filter the data based on two conditions, which are Side, and Amenity.
+data_filter = FILTER US_accidents BY (Side=='R') AND (Amenity=='FALSE');
+
+
+-- Group the filtered data by the Weather_Condition only.
+data_grouped = GROUP data_filter BY Weather_Condition;
+-- Group the filtered data by the Weather_Condition and State. 
+-- data_grouped = GROUP data_filter BY (State, Weather_Condition);
+
+
+-- Generate and count the needed from the filtered data.
+num_of_accidents = FOREACH data_grouped GENERATE group, COUNT(data_filter) AS TotalAccidents;
+
+
+-- Order the result.
+ordered_result = ORDER num_of_accidents BY TotalAccidents DESC;
+
+
+-- Show the result.
+DUMP ordered_result;
+---------------------------------------------------------------------------------------------
+2. How many accidents occurred during the sunset when the humidity percentage was between 85 and 100.
+
+
+-- Load the dataset from a CSV file. (with skipping the input header)
+US_accidents = LOAD '/user/maria_dev/Capstone/US_accidents_Pig.csv' USING  
+org.apache.pig.piggybank.storage.CSVExcelStorage(',' ,'NO_MULTILINE','UNIX','SKIP_INPUT_HEADER') 
+AS(ID:int,Severity:int,Month:int,Year:int,Distance:float,Side:chararray,City:chararray,County:chararray,State:chararray,
+Temperature:float,Wind_Chill:float,Humidity:float,Pressure:float,Visibility:float,Wind_Direction:chararray,Wind_Speed:float,
+Precipitation:float,Weather_Condition:chararray,Amenity:chararray,Bump:chararray,Crossing:chararray,Give_Way:chararray,
+Junction:chararray,No_Exit:chararray,Railway:chararray,Roundabout:chararray,Station:chararray,Stop:chararray,
+Traffic_Calming:chararray,Traffic_Signal:chararray,Turning_Loop:chararray,Sunrise_Sunset:chararray,
+Civil_Twilight:chararray,Nautical_Twilight:chararray,Astronomical_Twilight:chararray);
+
+
+-- Filter the data based on two conditions, which are Sunrise_Sunset, and Humidity.
+data_filter = FILTER US_accidents BY (Sunrise_Sunset=='Night') AND (Humidity > 85 and Humidity < 100);
+
+
+-- Group the filtered data.
+data_grouped = GROUP data_filter ALL;
+
+
+-- Generate and count the needed from the filtered data.
+num_of_accidents = FOREACH data_grouped GENERATE COUNT(data_filter);
+
+
+-- Show the result.
+DUMP num_of_accidents;
+---------------------------------------------------------------------------------------------
+3. What is the average wind speed for accidents in each county when the wind is blowing from the west and the temperature is 25 degrees or lower.
+
+
+-- Load the dataset from a CSV file. (with skipping the input header)
+US_accidents = LOAD '/user/maria_dev/Capstone/US_accidents_Pig.csv' USING  
+org.apache.pig.piggybank.storage.CSVExcelStorage(',' ,'NO_MULTILINE','UNIX','SKIP_INPUT_HEADER') 
+AS(ID:int,Severity:int,Month:int,Year:int,Distance:float,Side:chararray,City:chararray,County:chararray,State:chararray,
+Temperature:float,Wind_Chill:float,Humidity:float,Pressure:float,Visibility:float,Wind_Direction:chararray,Wind_Speed:float,
+Precipitation:float,Weather_Condition:chararray,Amenity:chararray,Bump:chararray,Crossing:chararray,Give_Way:chararray,
+Junction:chararray,No_Exit:chararray,Railway:chararray,Roundabout:chararray,Station:chararray,Stop:chararray,
+Traffic_Calming:chararray,Traffic_Signal:chararray,Turning_Loop:chararray,Sunrise_Sunset:chararray,
+Civil_Twilight:chararray,Nautical_Twilight:chararray,Astronomical_Twilight:chararray);
+
+
+-- Filter the data based on two conditions, which are Temperature, and Wind_Direction.
+data_filter = FILTER US_accidents BY (Temperature <= 25) AND (Wind_Direction matches 'West');
+
+
+-- Group the data to find the average wind speed, grouped the result by the County.
+data_grouped = GROUP data_filter BY County;
+
+
+-- Generate and find the average wind speed. 
+average_wind_speed = FOREACH data_grouped GENERATE group, AVG(data_filter.Wind_Speed) AS averageWSpeed;
+
+
+-- Order the avg in each county.
+ordered_data = ORDER average_wind_speed BY averageWSpeed DESC;
+
+
+-- Show the result.
+DUMP ordered_data;
+---------------------------------------------------------------------------------------------
+4. Find the minimum and maximum temperatures when accidents occurred in the following states: TX, GA, AL, and FL. Group by the state.
+
+
+-- Load the dataset from a CSV file. (with skipping the input header)
+US_accidents = LOAD '/user/maria_dev/Capstone/US_accidents_Pig.csv' USING  
+org.apache.pig.piggybank.storage.CSVExcelStorage(',' ,'NO_MULTILINE','UNIX','SKIP_INPUT_HEADER') 
+AS(ID:int,Severity:int,Month:int,Year:int,Distance:float,Side:chararray,City:chararray,County:chararray,State:chararray,
+Temperature:float,Wind_Chill:float,Humidity:float,Pressure:float,Visibility:float,Wind_Direction:chararray,Wind_Speed:float,
+Precipitation:float,Weather_Condition:chararray,Amenity:chararray,Bump:chararray,Crossing:chararray,Give_Way:chararray,
+Junction:chararray,No_Exit:chararray,Railway:chararray,Roundabout:chararray,Station:chararray,Stop:chararray,
+Traffic_Calming:chararray,Traffic_Signal:chararray,Turning_Loop:chararray,Sunrise_Sunset:chararray,
+Civil_Twilight:chararray,Nautical_Twilight:chararray,Astronomical_Twilight:chararray);
+
+
+-- Filter the data based on state condition.
+data_filter = FILTER US_accidents BY (State matches 'TX') OR (State matches 'GA')
+OR (State matches 'FL') OR (State matches 'AL');
+
+
+-- Group the data to find the max and min, grouped the result by the State.
+data_grouped = GROUP data_filter BY State;
+
+
+-- Generate and find the maximum and minimum temperature. 
+max_min_temp = FOREACH data_grouped GENERATE group, MAX(data_filter.Temperature), MIN(data_filter.Temperature);
+
+
+-- Show the result.
+DUMP max_min_temp;
+---------------------------------------------------------------------------------------------
+5. How many accidents with a distance more than 3 miles and with the highest severity of 4.
+
+
+-- Loading our dataset:
+US_accidents = LOAD '/user/maria_dev/Capstone/US_accidents_Pig.csv' USING  
+org.apache.pig.piggybank.storage.CSVExcelStorage(',' ,'NO_MULTILINE','UNIX','SKIP_INPUT_HEADER') 
+AS(ID:int,Severity:int,Month:int,Year:int,Distance:float,Side:chararray,
+City:chararray,County:chararray,State:chararray,Temperature:float,Wind_Chill:float,Humidity:float,
+Pressure:float,Visibility:float,Wind_Direction:chararray,Wind_Speed:float,
+Precipitation:float,Weather_Condition:chararray,Amenity:chararray,Bump:chararray,Crossing:chararray,Give_Way:chararray,Junction:chararray,No_Exit:chararray,
+Railway:chararray,Roundabout:chararray,Station:chararray,Stop:chararray,Traffic_Calming:chararray,Traffic_Signal:chararray,Turning_Loop:chararray,
+Sunrise_Sunset:chararray,Civil_Twilight:chararray,Nautical_Twilight:chararray,Astronomical_Twilight:chararray);
+
+
+--Filtering based on our conditions:
+filter_data= FILTER US_accidents BY (Severity == 4) AND (Distance >= 3);
+
+
+--Next we will group to get the count of the listings
+grp_all= GROUP filter_data All;
+accidents_count = foreach grp_all GENERATE COUNT(filter_data); 
+
+
+--Show our result
+dump accidents_count;
+
+
+--Store result
+--STORE accidents_count INTO '/user/maria_dev/Capstone/accidents_count' USING PigStorage (',');
+
+
+----------------------------------------------------------------------------------------------
+6.How many accidents happened that had a distance of or more than 0.5 miles and with a severity of 2 or more? Split the results for each accident side and save each of them in a separate dataset.
+
+
+-- Loading our dataset:
+US_accidents = LOAD '/user/maria_dev/Capstone/US_accidents_Pig.csv' USING  
+org.apache.pig.piggybank.storage.CSVExcelStorage(',' ,'NO_MULTILINE','UNIX','SKIP_INPUT_HEADER') 
+AS(ID:int,Severity:int,Month:int,Year:int,Distance:float,Side:chararray,
+City:chararray,County:chararray,State:chararray,Temperature:float,Wind_Chill:float,Humidity:float,
+Pressure:float,Visibility:float,Wind_Direction:chararray,Wind_Speed:float,
+Precipitation:float,Weather_Condition:chararray,Amenity:chararray,Bump:chararray,Crossing:chararray,Give_Way:chararray,Junction:chararray,No_Exit:chararray,
+Railway:chararray,Roundabout:chararray,Station:chararray,Stop:chararray,Traffic_Calming:chararray,Traffic_Signal:chararray,Turning_Loop:chararray,
+Sunrise_Sunset:chararray,Civil_Twilight:chararray,Nautical_Twilight:chararray,Astronomical_Twilight:chararray);
+
+
+
+
+--Filtering based on our conditions:
+filter_data= FILTER US_accidents BY (Distance >= 0.5) AND (Severity >= 2);
+
+
+--Next we will group by side of the accident to get their count 
+grp_all = GROUP filter_data by (Side);
+AccidentsSides = foreach grp_all GENERATE FLATTEN(group) AS Side, COUNT(filter_data); 
+
+
+--Splitting the results based on whether this was for room types
+SPLIT AccidentsSides into Side_Left if Side=='L', Side_Right if Side=='R';
+
+
+--Store each side accident into its own file
+STORE Side_Left INTO '/user/maria_dev/belt/Capstone/Side_Left' USING PigStorage (',');
+STORE Side_Right INTO '/user/maria_dev/belt/Capstone/Side_Right' USING PigStorage (',');
+
+
+
+
+--Show our result
+dump AccidentsSides;
+
+
+-------------------------------------------------------------------------------------------------
+7. What is the average distance for accidents in each state?
+
+
+-- Loading our dataset:
+US_accidents = LOAD '/user/maria_dev/Capstone/US_accidents_Pig.csv' USING  
+org.apache.pig.piggybank.storage.CSVExcelStorage(',' ,'NO_MULTILINE','UNIX','SKIP_INPUT_HEADER') 
+AS(ID:int,Severity:int,Month:int,Year:int,Distance:float,Side:chararray,
+City:chararray,County:chararray,State:chararray,Temperature:float,Wind_Chill:float,Humidity:float,
+Pressure:float,Visibility:float,Wind_Direction:chararray,Wind_Speed:float,
+Precipitation:float,Weather_Condition:chararray,Amenity:chararray,Bump:chararray,Crossing:chararray,Give_Way:chararray,Junction:chararray,No_Exit:chararray,
+Railway:chararray,Roundabout:chararray,Station:chararray,Stop:chararray,Traffic_Calming:chararray,Traffic_Signal:chararray,Turning_Loop:chararray,
+Sunrise_Sunset:chararray,Civil_Twilight:chararray,Nautical_Twilight:chararray,Astronomical_Twilight:chararray);
+
+
+--Generate the needed info
+accidents_info = FOREACH US_accidents GENERATE Severity, Month, Year, Side, Distance;
+
+
+--Next we will group by states 
+grp_all= GROUP accidents_info by (Side);
+accidents_avg = foreach grp_all GENERATE FLATTEN(group) AS (Side), AVG(accidents_info.Distance); 
+
+
+--Show our result
+dump accidents_avg;
+
+
+--Store result
+STORE accidents_avg INTO '/user/maria_dev/Capstone/accidents_avg' USING PigStorage (',');
+
+
+-----------------------------------------------------------------------------------------------
+8. Show accidents that occurred with their severity, month and year that have the weather condition as 'Snow' in ascending order
+
+
+-- Loading our dataset:
+US_accidents = LOAD '/user/maria_dev/Capstone/US_accidents_Pig.csv' USING  
+org.apache.pig.piggybank.storage.CSVExcelStorage(',' ,'NO_MULTILINE','UNIX','SKIP_INPUT_HEADER') 
+AS(ID:int,Severity:int,Month:int,Year:int,Distance:float,Side:chararray,
+City:chararray,County:chararray,State:chararray,Temperature:float,Wind_Chill:float,Humidity:float,
+Pressure:float,Visibility:float,Wind_Direction:chararray,Wind_Speed:float,
+Precipitation:float,Weather_Condition:chararray,Amenity:chararray,Bump:chararray,Crossing:chararray,Give_Way:chararray,Junction:chararray,No_Exit:chararray,
+Railway:chararray,Roundabout:chararray,Station:chararray,Stop:chararray,Traffic_Calming:chararray,Traffic_Signal:chararray,Turning_Loop:chararray,
+Sunrise_Sunset:chararray,Civil_Twilight:chararray,Nautical_Twilight:chararray,Astronomical_Twilight:chararray);
+
+
+--Generate the needed info
+accidents_info = FOREACH US_accidents GENERATE Severity, Month, Year,Weather_Condition;
+
+
+--Filtering based on our conditions:
+filter_data= FILTER accidents_info BY (Weather_Condition matches 'Sand') OR (Weather_Condition matches 'Sand / Dust Whirlwinds') 
+             OR (Weather_Condition matches 'Sand / Windy');
+
+
+--Order our filter by the month in Ascending order
+order_by_data = ORDER filter_data BY Month ASC;
+
+
+--Show our result
+dump order_by_data;
+
+
+--Store result
+STORE order_by_data INTO '/user/maria_dev/Capstone/order_by_data' USING PigStorage (',');
+-----------------------------------------------------------------------------------------------
+9. Find the total number of accidents by month of 2019, 2020, 2021. For the highest populated US states,which are California CA, Texas TX, Florida FL, New York NY, and Pennsylvania PA.Then compare the results with the rate of accidents in the highest populated KSA regions. 
+
+
+-- load the dataset
+data = LOAD '/user/maria_dev/Capstone/US_accidents_Pig.csv' USING  
+org.apache.pig.piggybank.storage.CSVExcelStorage(',' ,'NO_MULTILINE','UNIX','SKIP_INPUT_HEADER') 
+AS(ID:int,Severity:int,Month:int,Year:int,Distance:float,Side:chararray,
+City:chararray,County:chararray,State:chararray,Temperature:float,Wind_Chill:float,Humidity:float,
+Pressure:float,Visibility:float,Wind_Direction:chararray,Wind_Speed:float,
+Precipitation:float,Weather_Condition:chararray,Amenity:chararray,Bump:chararray,Crossing:chararray,Give_Way:chararray,Junction:chararray,No_Exit:chararray,
+Railway:chararray,Roundabout:chararray,Station:chararray,Stop:chararray,Traffic_Calming:chararray,Traffic_Signal:chararray,Turning_Loop:chararray,
+Sunrise_Sunset:chararray,Civil_Twilight:chararray,Nautical_Twilight:chararray,Astronomical_Twilight:chararray);
+
+
+-- Generating the needed columns for faster execution
+Generate_col = FOREACH data GENERATE Year,State,Month;
+
+
+-- Filtering the data based on the three condition:
+Filtered_data = FILTER Generate_col BY ((Year==2019) OR (Year==2020) OR (Year==2021)) AND ((State matches 'CA') OR (State matches 'TX') OR (State matches 'FL')
+OR (State matches 'NY') OR (State matches 'PA'));
+
+
+GroupING = GROUP Filtered_data BY (Year,Month,State);
+
+
+--Couning the number of records after grouping the filtrings
+Accidents_Count = FOREACH GroupING GENERATE FLATTEN(group) AS (Year,Month,State), COUNT(Filtered_data) AS Accidents_Count;
+
+
+DESCRIBE Accidents_Count;
+--Display the result
+DUMP Accidents_Count;
+—-------------------------------------------------------------------------------------------------------
+10.The highest temperature recorded in KSA was between 45(113) C(F) - 53(127) C(F) degrees. Count the number of accidents when the temperature is in the range between  100 to 127 degrees  Fahrenheit, and when the traffic calm is ‘FALSE’.Then, conclude if there is a relation between the temperature and the Increased probability of accidents.
+
+
+US_accidents = LOAD '/user/maria_dev/Capstone/US_accidents_Pig.csv' USING  
+org.apache.pig.piggybank.storage.CSVExcelStorage(',' ,'NO_MULTILINE','UNIX','SKIP_INPUT_HEADER') 
+AS(ID:int,Severity:int,Month:int,Year:int,Distance:float,Side:chararray,
+City:chararray,County:chararray,State:chararray,Temperature:float,Wind_Chill:float,Humidity:float,
+Pressure:float,Visibility:float,Wind_Direction:chararray,Wind_Speed:float,
+Precipitation:float,Weather_Condition:chararray,Amenity:chararray,Bump:chararray,Crossing:chararray,Give_Way:chararray,Junction:chararray,No_Exit:chararray,
+Railway:chararray,Roundabout:chararray,Station:chararray,Stop:chararray,Traffic_Calming:chararray,Traffic_Signal:chararray,Turning_Loop:chararray,
+Sunrise_Sunset:chararray,Civil_Twilight:chararray,Nautical_Twilight:chararray,Astronomical_Twilight:chararray);
+
+
+-- Generating the needed columns for faster execution
+Generate_cols = FOREACH US_accidents GENERATE Temperature,Traffic_Calming;
+
+
+-- Filtering the data based on the three condition:
+Filtered_data = FILTER Generate_cols BY (Temperature>=100) AND (Temperature<=127) AND (Traffic_Calming matches 'FALSE');
+
+
+GroupING = GROUP Filtered_data BY (Temperature);
+
+
+--Couning the number of records after grouping the filtrings
+Accidents_Count = FOREACH GroupING GENERATE FLATTEN(group) AS (Temperature), COUNT(Filtered_data) AS Accidents_Count;
+
+
+DESCRIBE Accidents_Count;
+--Display the result
+DUMP Accidents_Count;
+
+
+—-------------------------------------------------------------------------------------------------------
+
+
+11.The sand cover in the Kingdom of Saudi Arabia constitutes 34% of the total area of the Kingdom, which increases the activity and speed of sandstorms. Wind speed varies during sandstorms in Saudi Arabia, and increases to range between 54-63 km/h and low humidity(%). For each severity level, find how many accidents happened when the wind speed(mph) is 20 or above and humidity is less than 30%.
+
+
+-- load the dataset
+data = LOAD '/user/maria_dev/Capstone/US_accidents_Pig.csv' USING  
+org.apache.pig.piggybank.storage.CSVExcelStorage(',' ,'NO_MULTILINE','UNIX','SKIP_INPUT_HEADER') 
+AS(ID:int,Severity:int,Month:int,Year:int,Distance:float,Side:chararray,
+City:chararray,County:chararray,State:chararray,Temperature:float,Wind_Chill:float,Humidity:float,
+Pressure:float,Visibility:float,Wind_Direction:chararray,Wind_Speed:float,
+Precipitation:float,Weather_Condition:chararray,Amenity:chararray,Bump:chararray,Crossing:chararray,Give_Way:chararray,Junction:chararray,No_Exit:chararray,
+Railway:chararray,Roundabout:chararray,Station:chararray,Stop:chararray,Traffic_Calming:chararray,Traffic_Signal:chararray,Turning_Loop:chararray,
+Sunrise_Sunset:chararray,Civil_Twilight:chararray,Nautical_Twilight:chararray,Astronomical_Twilight:chararray);
+
+
+-- Generating the needed columns for faster execution
+Generate_cols = FOREACH data GENERATE Wind_Speed,Severity,Humidity;
+
+
+-- Filtering the data based on the three conditions:
+Filtered_data = FILTER Generate_cols BY (Wind_Speed>=20) AND (Humidity<30);
+
+
+GroupING = GROUP Filtered_data BY (Severity);
+
+
+--Couning the number of records after grouping the filtrings
+Accidents_Count = FOREACH GroupING  GENERATE group as GroupING, COUNT(Filtered_data) AS Accidents_Count;
+
+
+DESCRIBE Accidents_Count;
+--Display the result
+DUMP Accidents_Count;
+
+
+—-------------------------------------------------------------------------------------------------------
+
+
+12.Find the total number of accidents in these cities Cleveland, Westerville, Fairdale, Youngstown and Lake Forest when the weather is Fog , Fog / Windy and the Visibility is less or equal to 0.5 mi group by year.
+
+
+
+
+-- Load the dataset
+
+
+accidents =  LOAD '/user/maria_dev/Capstone/US_accidents_Pig.csv’ USING  
+org.apache.pig.piggybank.storage.CSVExcelStorage(',' ,'NO_MULTILINE','UNIX','SKIP_INPUT_HEADER') 
+AS(ID:int,Severity:int,Month:int,Year:int,Distance:float,Side:chararray,
+City:chararray,County:chararray,State:chararray,Temperature:float,Wind_Chill:float,Humidity:float,
+Pressure:float,Visibility:float,Wind_Direction:chararray,Wind_Speed:float,
+Precipitation:float,Weather_Condition:chararray,Amenity:chararray,Bump:chararray,Crossing:chararray,Give_Way:chararray,Junction:chararray,No_Exit:chararray,
+Railway:chararray,Roundabout:chararray,Station:chararray,Stop:chararray,Traffic_Calming:chararray,Traffic_Signal:chararray,Turning_Loop:chararray,
+Sunrise_Sunset:chararray,Civil_Twilight:chararray,Nautical_Twilight:chararray,Astronomical_Twilight:chararray);
+
+
+
+
+-- generate the columns we need 
+
+
+columns= FOREACH accidents GENERATE City, Weather_Condition, Visibility,Year;
+
+
+-- filtering by City, Weather_Condition and Visibility
+
+
+filtering= FILTER columns BY ((City == 'Cleveland') OR (City == 'Westerville') OR 
+(City == 'Fairdale') OR (City == 'Youngstown') OR (City == 'Lake Forest')) AND (Visibility <= 0.5) AND ((Weather_Condition == 'Fog') OR (Weather_Condition == 'Fog / Windy'));
+
+
+
+
+-- group by  filtering
+
+
+group_all = Group filtering BY (Year);
+
+
+-- get the count number of listings 
+
+
+accidents_by_years= FOREACH group_all Generate group As accidents_years, COUNT(filtering);
+
+
+-- get the result
+
+
+DUMP accidents_by_years;
+
+
+-----------------------------------------------------------------------------------------------
+13. Find the total number of accident where the weather condition is cloudy and the state : TX, PX, and FL sort the result by year 
+-- Load the dataset from a CSV file. (with skipping the input header)
+US_accidents = LOAD '/user/maria_dev/US_accidents_Pig.csv' USING  
+org.apache.pig.piggybank.storage.CSVExcelStorage(',' ,'NO_MULTILINE','UNIX','SKIP_INPUT_HEADER') 
+AS(ID:int,Severity:int,Month:int,Year:int,Distance:float,Side:chararray,City:chararray,County:chararray,State:chararray,
+Temperature:float,Wind_Chill:float,Humidity:float,Pressure:float,Visibility:float,Wind_Direction:chararray,Wind_Speed:float,
+Precipitation:float,Weather_Condition:chararray,Amenity:chararray,Bump:chararray,Crossing:chararray,Give_Way:chararray,
+Junction:chararray,No_Exit:chararray,Railway:chararray,Roundabout:chararray,Station:chararray,Stop:chararray,
+Traffic_Calming:chararray,Traffic_Signal:chararray,Turning_Loop:chararray,Sunrise_Sunset:chararray,
+Civil_Twilight:chararray,Nautical_Twilight:chararray,Astronomical_Twilight:chararray);
+first_filter_data = FILTER US_accidents by (State matches 'TX') OR (State matches 'PX') OR(State matches 'FL');
+filter_data = FILTER first_filter_data by (Weather_Condition matches 'Cloudy'); 
+--grouping the filtered data
+Grouped_data = GROUP filter_data BY (Year);
+--Counting the number of accidents and Group the results by the year
+count_accidents = FOREACH Grouped_data GENERATE FLATTEN(group) AS 
+(Year), COUNT(filter_data.ID) AS count_accidents;
+--store the result 
+STORE count_accidents INTO '/user/maria_dev/Capstone_Results/Q13result.txt' USING PigStorage(',');
+--printing the result 
+DUMP count_accidents;
+
+
+-----------------------------------------------------------------------------------------------
+14 .What is the Maximum and Minimum visibility value for accidents that occurred at ‘night’ group the result by year.
+
+
+-- load the dataset
+data = LOAD '/user/maria_dev/Capstone/US_accidents_Pig.csv' USING  
+org.apache.pig.piggybank.storage.CSVExcelStorage(',' ,'NO_MULTILINE','UNIX','SKIP_INPUT_HEADER') 
+AS(ID:int,Severity:int,Month:int,Year:int,Distance:float,Side:chararray,
+City:chararray,County:chararray,State:chararray,Temperature:float,Wind_Chill:float,Humidity:float,
+Pressure:float,Visibility:float,Wind_Direction:chararray,Wind_Speed:float,
+Precipitation:float,Weather_Condition:chararray,Amenity:chararray,Bump:chararray,Crossing:chararray,Give_Way:chararray,Junction:chararray,No_Exit:chararray,
+Railway:chararray,Roundabout:chararray,Station:chararray,Stop:chararray,Traffic_Calming:chararray,Traffic_Signal:chararray,Turning_Loop:chararray,
+Sunrise_Sunset:chararray,Civil_Twilight:chararray,Nautical_Twilight:chararray,Astronomical_Twilight:chararray);
+
+
+-- select the needed data 
+data_info = FOREACH data GENERATE Sunrise_Sunset, Year ,Visibility; 
+
+
+--filtering based on the accidents that happened at night
+filtered_data= FILTER data_info BY (Sunrise_Sunset == 'Night');
+
+
+-- group the filtered data by year
+group_by_year = Group filtered_data BY (Year);
+
+
+--finding the min and max Visibility 
+max_min = foreach group_by_year  GENERATE group as group_by_year, MAX(filtered_data.Visibility) , MIN(filtered_data.Visibility);
+
+
+--Show our result
+dump max_min;
+
+
+--Store result
+STORE max_min INTO '/user/maria_dev/Capstone/Q14_max_min' USING PigStorage (',');
+-----------------------------------------------------------------------------------------------
+15 . What is the Maximum and Minimum visibility value for accidents that occurred on ‘day’? Group the result by year.
+
+
+-- load the dataset
+data = LOAD '/user/maria_dev/Capstone/US_accidents_Pig.csv' USING  
+org.apache.pig.piggybank.storage.CSVExcelStorage(',' ,'NO_MULTILINE','UNIX','SKIP_INPUT_HEADER') 
+AS(ID:int,Severity:int,Month:int,Year:int,Distance:float,Side:chararray,
+City:chararray,County:chararray,State:chararray,Temperature:float,Wind_Chill:float,Humidity:float,
+Pressure:float,Visibility:float,Wind_Direction:chararray,Wind_Speed:float,
+Precipitation:float,Weather_Condition:chararray,Amenity:chararray,Bump:chararray,Crossing:chararray,Give_Way:chararray,Junction:chararray,No_Exit:chararray,
+Railway:chararray,Roundabout:chararray,Station:chararray,Stop:chararray,Traffic_Calming:chararray,Traffic_Signal:chararray,Turning_Loop:chararray,
+Sunrise_Sunset:chararray,Civil_Twilight:chararray,Nautical_Twilight:chararray,Astronomical_Twilight:chararray);
+
+
+-- select the needed data 
+data_info = FOREACH data GENERATE Sunrise_Sunset, Year ,Visibility; 
+
+
+--filtering based on the accidents that happened at night
+filtered_data= FILTER data_info BY (Sunrise_Sunset == 'Day');
+
+
+-- group the filtered data by year
+group_by_year = Group filtered_data BY (Year);
+
+
+--finding the min and max Visibility 
+max_min = foreach group_by_year  GENERATE group as group_by_year, MAX(filtered_data.Visibility) , MIN(filtered_data.Visibility);
+
+
+--Show our result
+dump max_min;
+
+
+--Store result
+STORE max_min INTO '/user/maria_dev/Capstone/Q15_max_min' USING PigStorage (',');
+-----------------------------------------------------------------------------------------------
+16 . What is the Average wind speed where the severity is 2 and Junction is True? Group by month.
+
+
+-- load the dataset
+data = LOAD '/user/maria_dev/Capstone/US_accidents_Pig.csv' USING  
+org.apache.pig.piggybank.storage.CSVExcelStorage(',' ,'NO_MULTILINE','UNIX','SKIP_INPUT_HEADER') 
+AS(ID:int,Severity:int,Month:int,Year:int,Distance:float,Side:chararray,
+City:chararray,County:chararray,State:chararray,Temperature:float,Wind_Chill:float,Humidity:float,
+Pressure:float,Visibility:float,Wind_Direction:chararray,Wind_Speed:float,
+Precipitation:float,Weather_Condition:chararray,Amenity:chararray,Bump:chararray,Crossing:chararray,Give_Way:chararray,Junction:chararray,No_Exit:chararray,
+Railway:chararray,Roundabout:chararray,Station:chararray,Stop:chararray,Traffic_Calming:chararray,Traffic_Signal:chararray,Turning_Loop:chararray,
+Sunrise_Sunset:chararray,Civil_Twilight:chararray,Nautical_Twilight:chararray,Astronomical_Twilight:chararray);
+
+
+-- select the needed data 
+data_info = FOREACH data GENERATE Wind_Speed, Severity ,Junction, Month; 
+
+
+--filtering based on the Severity and Junction
+filtered_data= FILTER data_info BY (Severity == 2) AND (Junction == 'TRUE');
+
+
+-- group the filtered data by month
+group_by_month = Group filtered_data BY (Month);
+
+
+--finding the avg wind speed 
+avg_speed = foreach group_by_month  GENERATE group as group_by_month, AVG(filtered_data.Wind_Speed);
+
+
+--execute the result
+dump avg_speed;
+
+
+--Store result
+STORE avg_speed INTO '/user/maria_dev/Capstone/Q16_avg_speed' USING PigStorage (',');
+
+
+
+
+-----------------------------------------------------------------------------------------------
+17 .What is the  Average precipitation for the occurred accidents grouped by month?
+
+
+-- load the dataset
+data = LOAD '/user/maria_dev/Capstone/US_accidents_Pig.csv' USING  
+org.apache.pig.piggybank.storage.CSVExcelStorage(',' ,'NO_MULTILINE','UNIX','SKIP_INPUT_HEADER') 
+AS(ID:int,Severity:int,Month:int,Year:int,Distance:float,Side:chararray,
+City:chararray,County:chararray,State:chararray,Temperature:float,Wind_Chill:float,Humidity:float,
+Pressure:float,Visibility:float,Wind_Direction:chararray,Wind_Speed:float,
+Precipitation:float,Weather_Condition:chararray,Amenity:chararray,Bump:chararray,Crossing:chararray,Give_Way:chararray,Junction:chararray,No_Exit:chararray,
+Railway:chararray,Roundabout:chararray,Station:chararray,Stop:chararray,Traffic_Calming:chararray,Traffic_Signal:chararray,Turning_Loop:chararray,
+Sunrise_Sunset:chararray,Civil_Twilight:chararray,Nautical_Twilight:chararray,Astronomical_Twilight:chararray);
+
+
+-- select the needed data 
+data_info = FOREACH data GENERATE Precipitation, Month; 
+
+
+--filtering based on the Severity and Junction
+--filtered_data= FILTER data_info BY (Severity == 2) AND (Junction == 'TRUE');
+
+
+-- group the filtered data by month
+group_by_month = Group data_info BY (Month);
+
+
+--finding the avg Precipitation
+avg_prec = foreach group_by_month  GENERATE group as group_by_month, AVG(data_info.Precipitation);
+
+
+--execute the result
+dump avg_prec;
+
+
+--Store result
+STORE avg_prec INTO '/user/maria_dev/Capstone/Q17_avg_prec' USING PigStorage (',');
+
+
+-----------------------------------------------------------------------------------------------
+18.How many accidents occurred where there was a roundabout
+-- Load the dataset
+accidents =  LOAD '/user/maria_dev/Capstone/US_accidents_Pig.csv’ USING  org.apache.pig.piggybank.storage.CSVExcelStorage(',' ,'NO_MULTILINE','UNIX','SKIP_INPUT_HEADER') 
+AS(ID:int,Severity:int,Month:int,Year:int,Distance:float,Side:chararray,
+City:chararray,County:chararray,State:chararray,Temperature:float,Wind_Chill:float,Humidity:float,Pressure:float,Visibility:float,Wind_Direction:chararray,Wind_Speed:float,
+Precipitation:float,Weather_Condition:chararray,Amenity:chararray,Bump:chararray,Crossing:chararray,Give_Way:chararray,Junction:chararray,No_Exit:chararray,
+Railway:chararray,Roundabout:chararray,Station:chararray,Stop:chararray,Traffic_Calming:chararray,Traffic_Signal:chararray,Turning_Loop:chararray,
+Sunrise_Sunset:chararray,Civil_Twilight:chararray,Nautical_Twilight:chararray,Astronomical_Twilight:chararray);
+-- generate the columns we need 
+columns= FOREACH accidents GENERATE Roundabout;
+-- filtering by stop Roundabout
+filtering= FILTER columns BY (Roundabout == 'TRUE');
+-- group by  filtering
+group_all = Group filtering All;
+-- get the count number of listings 
+accidents_Roundabout= FOREACH group_all Generate COUNT(filtering);
+-- get the result
+DUMP accidents_Roundabout;
+
+
+-----------------------------------------------------------------------------------------------
+19.Number of accidents where Stop sign is True
+
+
+-- Load the dataset
+
+
+accidents = LOAD '/user/maria_dev/Capstone/US_accidents_Pig.csv’' USING  
+org.apache.pig.piggybank.storage.CSVExcelStorage(',' ,'NO_MULTILINE','UNIX','SKIP_INPUT_HEADER') 
+AS(ID:int,Severity:int,Month:int,Year:int,Distance:float,Side:chararray,
+City:chararray,County:chararray,State:chararray,Temperature:float,Wind_Chill:float,Humidity:float,
+Pressure:float,Visibility:float,Wind_Direction:chararray,Wind_Speed:float,
+Precipitation:float,Weather_Condition:chararray,Amenity:chararray,Bump:chararray,Crossing:chararray,Give_Way:chararray,Junction:chararray,No_Exit:chararray,
+Railway:chararray,Roundabout:chararray,Station:chararray,Stop:chararray,Traffic_Calming:chararray,Traffic_Signal:chararray,Turning_Loop:chararray,
+Sunrise_Sunset:chararray,Civil_Twilight:chararray,Nautical_Twilight:chararray,Astronomical_Twilight:chararray);
+
+
+
+
+-- generate the columns we need 
+
+
+columns= FOREACH accidents GENERATE Stop;
+
+
+-- filtering by stop sign
+
+
+filtering= FILTER columns BY (Stop == 'TRUE');
+
+
+
+
+-- group by  filtering
+
+
+group_all = Group filtering All;
+
+
+-- get the count number of listings 
+
+
+accidents_stop= FOREACH group_all Generate COUNT(filtering);
+
+
+-- get the result
+
+
+DUMP accidents_stop;
+-----------------------------------------------------------------------------------------------
+
+
+20..Find the total number of accident where the state is Texas  or Florida or Alabama  and the visibility is 6 sort the result by the weather condition
+
+
+-- Load the dataset from a CSV file. (with skipping the input header)
+US_accidents = LOAD '/user/maria_dev/US_accidents_Pig.csv' USING  
+org.apache.pig.piggybank.storage.CSVExcelStorage(',' ,'NO_MULTILINE','UNIX','SKIP_INPUT_HEADER') 
+AS(ID:int,Severity:int,Month:int,Year:int,Distance:float,Side:chararray,City:chararray,County:chararray,State:chararray,
+Temperature:float,Wind_Chill:float,Humidity:float,Pressure:float,Visibility:float,Wind_Direction:chararray,Wind_Speed:float,
+Precipitation:float,Weather_Condition:chararray,Amenity:chararray,Bump:chararray,Crossing:chararray,Give_Way:chararray,
+Junction:chararray,No_Exit:chararray,Railway:chararray,Roundabout:chararray,Station:chararray,Stop:chararray,
+Traffic_Calming:chararray,Traffic_Signal:chararray,Turning_Loop:chararray,Sunrise_Sunset:chararray,
+Civil_Twilight:chararray,Nautical_Twilight:chararray,Astronomical_Twilight:chararray);
+first_filter_data = FILTER US_accidents by (State matches 'TX') OR (State matches 'PX') OR (State matches 'FL') OR (State matches 'AL');
+filter_data = FILTER first_filter_data by (Visibility == 6 ); 
+--grouping the filtered data
+Grouped_data = GROUP filter_data BY (Weather_Condition );
+--Counting the number of accidents and Group the results by the year
+count_accidents = FOREACH Grouped_data GENERATE FLATTEN(group) AS 
+(Weather_Condition), COUNT(filter_data.ID) AS count_accidents;
+--order the result 
+ordered_count_accidents = ORDER count_accidents BY count_accidents DESC;
+--store the result 
+STORE count_accidents INTO '/user/maria_dev/Capstone_Results/Q20result.txt' USING PigStorage(',');
+--printing the result 
+DUMP ordered_count_accidents;
